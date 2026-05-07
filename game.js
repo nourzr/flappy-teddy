@@ -1,6 +1,14 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
+// FULLSCREEN FIX (important)
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
 // IMAGES
 const teddy = new Image();
 teddy.src = "teddy.png";
@@ -24,90 +32,85 @@ let gravity = 0.5;
 let pipes = [];
 let pipeWidth = 70;
 let pipeGap = 220;
-let speed = 2;
+let speed = 3;
 
 // SCORE
 let cookies = 0;
 let best = 0;
+let newRecord = false;
 
-// CLOUDS
-let clouds = [
-  {x: 50, y: 100},
-  {x: 200, y: 150},
-  {x: 350, y: 80}
+// FUNNY MESSAGES 😄
+let funnyLose = [
+  "Teddy got bullied by pipes 💀",
+  "He forgot how to fly 😭",
+  "Cookies distracted him 🍪",
+  "Skill issue detected 🧠",
 ];
 
-// CREATE PIPE
+let funnyWin = [
+  "Teddy is proud of you 🧸",
+  "Cookie addiction level: MAX 🍪",
+  "You are the chosen one 😎",
+];
+
 function createPipe() {
   return {
-    x: 400,
-    height: Math.random() * 250 + 100
+    x: canvas.width,
+    height: Math.random() * (canvas.height - 200) + 80
   };
 }
 
 pipes.push(createPipe());
 
-// RESET GAME
+// RESET
 function reset() {
   y = 300;
   velocity = 0;
   pipes = [createPipe()];
   cookies = 0;
   pipeGap = 220;
+  newRecord = false;
   state = "playing";
 }
 
-// 🎮 UNIFIED INPUT
+// INPUT
 function jumpOrStart() {
   if (state === "home") reset();
   else if (state === "playing") velocity = -10;
   else if (state === "gameover") reset();
 }
 
-// 🚀 FINAL INPUT FIX (WORKS ON ALL DEVICES)
-canvas.addEventListener("pointerdown", function (e) {
+canvas.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   jumpOrStart();
 });
 
-// ⌨️ KEYBOARD SUPPORT
 document.addEventListener("keydown", e => {
   if (e.code === "Space") jumpOrStart();
 });
 
 // COLLISION
-function hit(pipe) {
+function hit(p) {
   return (
-    x < pipe.x + pipeWidth &&
-    x + 40 > pipe.x &&
-    (y < pipe.height || y + 40 > pipe.height + pipeGap)
+    x < p.x + pipeWidth &&
+    x + 40 > p.x &&
+    (y < p.height || y + 40 > p.height + pipeGap)
   );
 }
 
 // GAME LOOP
 function update() {
 
-  ctx.clearRect(0, 0, 400, 600);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // CLOUDS
-  clouds.forEach(c => {
-    ctx.fillStyle = "white";
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, 20, 0, Math.PI * 2);
-    ctx.fill();
-
-    c.x -= 0.5;
-    if (c.x < -50) c.x = 450;
-  });
-
-  // HOME SCREEN
+  // HOME
   if (state === "home") {
     ctx.fillStyle = "white";
-    ctx.font = "40px Arial";
-    ctx.fillText("Flappy Teddy 🧸", 60, 250);
+    ctx.font = "bold 50px Arial";
+    ctx.fillText("Flappy Teddy 🧸", 80, 200);
 
-    ctx.font = "18px Arial";
-    ctx.fillText("Tap / Click / SPACE to start", 60, 320);
+    ctx.font = "20px Arial";
+    ctx.fillText("Tap / Click / SPACE to start", 90, 280);
   }
 
   // PLAYING
@@ -118,11 +121,11 @@ function update() {
 
     pipes.forEach(p => p.x -= speed);
 
-    if (pipes[pipes.length - 1].x < 200) {
+    if (pipes[pipes.length - 1].x < canvas.width - 200) {
       pipes.push(createPipe());
     }
 
-    if (pipes[0].x < -70) {
+    if (pipes[0].x < -pipeWidth) {
       pipes.shift();
       cookies++;
 
@@ -136,19 +139,19 @@ function update() {
       if (hit(p)) state = "gameover";
     });
 
-    if (y < 0 || y > 600) state = "gameover";
+    if (y < 0 || y > canvas.height) state = "gameover";
 
-    // DRAW PIPES
-    ctx.fillStyle = "green";
+    // DRAW PIPES (lighter for performance)
+    ctx.fillStyle = "#1f8f3a";
     pipes.forEach(p => {
       ctx.fillRect(p.x, 0, pipeWidth, p.height);
-      ctx.fillRect(p.x, p.height + pipeGap, pipeWidth, 600);
+      ctx.fillRect(p.x, p.height + pipeGap, pipeWidth, canvas.height);
     });
 
     // TEDDY
-    ctx.drawImage(teddy, x, y, 40, 40);
+    ctx.drawImage(teddy, x, y, 45, 45);
 
-    // COOKIE HUD
+    // HUD
     ctx.drawImage(cookie, 10, 10, 25, 25);
     ctx.fillStyle = "white";
     ctx.font = "20px Arial";
@@ -158,18 +161,31 @@ function update() {
   // GAME OVER
   if (state === "gameover") {
 
-    if (cookies > best) best = cookies;
+    if (cookies > best) {
+      best = cookies;
+      newRecord = true;
+    }
 
-    ctx.drawImage(skull, 170, 150, 60, 60);
+    ctx.drawImage(skull, canvas.width / 2 - 30, 120, 60, 60);
 
     ctx.fillStyle = "white";
-    ctx.font = "40px Arial";
-    ctx.fillText("You Lost!", 120, 250);
+    ctx.font = "bold 40px Arial";
+    ctx.fillText("You Lost!", canvas.width / 2 - 90, 220);
+
+    // funny message
+    let msg = funnyLose[Math.floor(Math.random() * funnyLose.length)];
+    ctx.font = "18px Arial";
+    ctx.fillText(msg, canvas.width / 2 - 120, 260);
+
+    if (newRecord) {
+      ctx.fillText("🔥 NEW HIGH SCORE! 🔥", canvas.width / 2 - 120, 290);
+    }
 
     ctx.font = "20px Arial";
-    ctx.fillText("Cookies: " + cookies, 140, 300);
-    ctx.fillText("Best: " + best, 150, 340);
-    ctx.fillText("Tap / SPACE to restart", 90, 400);
+    ctx.fillText("Cookies: " + cookies, canvas.width / 2 - 70, 340);
+    ctx.fillText("Best: " + best, canvas.width / 2 - 50, 370);
+
+    ctx.fillText("Tap / SPACE to restart", canvas.width / 2 - 110, 420);
   }
 
   requestAnimationFrame(update);
