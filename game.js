@@ -37,7 +37,7 @@ let clouds = [
   {x: 350, y: 80}
 ];
 
-// PIPE CREATION
+// CREATE PIPE
 function createPipe() {
   return {
     x: 400,
@@ -57,32 +57,25 @@ function reset() {
   state = "playing";
 }
 
-// 🔥 UNIFIED INPUT FUNCTION
+// 🎮 UNIFIED INPUT
 function jumpOrStart() {
   if (state === "home") reset();
   else if (state === "playing") velocity = -10;
   else if (state === "gameover") reset();
 }
 
-// ⌨️ KEYBOARD
-document.addEventListener("keydown", e => {
-  if (e.code === "Space") {
-    jumpOrStart();
-  }
-});
-
-// 📱 MOBILE TOUCH (FIXED)
-canvas.addEventListener("touchstart", function (e) {
+// 🚀 FINAL INPUT FIX (WORKS ON ALL DEVICES)
+canvas.addEventListener("pointerdown", function (e) {
   e.preventDefault();
   jumpOrStart();
-}, { passive: false });
-
-// 🖱️ MOUSE CLICK
-canvas.addEventListener("mousedown", function () {
-  jumpOrStart();
 });
 
-// COLLISION CHECK
+// ⌨️ KEYBOARD SUPPORT
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") jumpOrStart();
+});
+
+// COLLISION
 function hit(pipe) {
   return (
     x < pipe.x + pipeWidth &&
@@ -114,7 +107,7 @@ function update() {
     ctx.fillText("Flappy Teddy 🧸", 60, 250);
 
     ctx.font = "18px Arial";
-    ctx.fillText("Tap / Click / SPACE to start", 70, 320);
+    ctx.fillText("Tap / Click / SPACE to start", 60, 320);
   }
 
   // PLAYING
@@ -176,7 +169,7 @@ function update() {
     ctx.font = "20px Arial";
     ctx.fillText("Cookies: " + cookies, 140, 300);
     ctx.fillText("Best: " + best, 150, 340);
-    ctx.fillText("Tap / SPACE to restart", 100, 400);
+    ctx.fillText("Tap / SPACE to restart", 90, 400);
   }
 
   requestAnimationFrame(update);
