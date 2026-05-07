@@ -22,8 +22,8 @@ let gravity = 0.5;
 
 // PIPES
 let pipes = [];
-let pipeGap = 220;
 let pipeWidth = 70;
+let pipeGap = 220;
 let speed = 2;
 
 // SCORE
@@ -32,22 +32,22 @@ let best = 0;
 
 // CLOUDS
 let clouds = [
-  { x: 50, y: 100 },
-  { x: 200, y: 150 },
-  { x: 350, y: 80 },
+  {x: 50, y: 100},
+  {x: 200, y: 150},
+  {x: 350, y: 80}
 ];
 
 // CREATE PIPE
 function createPipe() {
   return {
     x: 400,
-    height: Math.random() * 250 + 100,
+    height: Math.random() * 250 + 100
   };
 }
 
 pipes.push(createPipe());
 
-// RESET
+// RESET GAME
 function reset() {
   y = 300;
   velocity = 0;
@@ -57,8 +57,8 @@ function reset() {
   state = "playing";
 }
 
-// INPUT
-document.addEventListener("keydown", (e) => {
+// INPUT (SPACE)
+document.addEventListener("keydown", e => {
   if (e.code === "Space") {
     if (state === "home") reset();
     else if (state === "playing") velocity = -10;
@@ -66,24 +66,32 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// 📱 TOUCH + CLICK SUPPORT
+function jumpOrStart() {
+  if (state === "home") reset();
+  else if (state === "playing") velocity = -10;
+  else if (state === "gameover") reset();
+}
+
+document.addEventListener("touchstart", jumpOrStart);
+document.addEventListener("mousedown", jumpOrStart);
+
 // COLLISION
 function hit(pipe) {
-  if (
+  return (
     x < pipe.x + pipeWidth &&
     x + 40 > pipe.x &&
     (y < pipe.height || y + 40 > pipe.height + pipeGap)
-  ) {
-    return true;
-  }
-  return false;
+  );
 }
 
-// LOOP
+// GAME LOOP
 function update() {
+
   ctx.clearRect(0, 0, 400, 600);
 
   // CLOUDS
-  clouds.forEach((c) => {
+  clouds.forEach(c => {
     ctx.fillStyle = "white";
     ctx.beginPath();
     ctx.arc(c.x, c.y, 20, 0, Math.PI * 2);
@@ -93,21 +101,23 @@ function update() {
     if (c.x < -50) c.x = 450;
   });
 
+  // HOME SCREEN
   if (state === "home") {
     ctx.fillStyle = "white";
     ctx.font = "40px Arial";
-    ctx.fillText("Flappy Teddy 🧸", 60, 250);
-    ctx.font = "20px Arial";
-    ctx.fillText("Press SPACE", 130, 320);
+    ctx.fillText("Flappy Teddy", 70, 250);
+
+    ctx.font = "18px Arial";
+    ctx.fillText("Tap / Click / SPACE to start", 70, 320);
   }
 
+  // PLAYING
   if (state === "playing") {
-    // physics
+
     velocity += gravity;
     y += velocity;
 
-    // pipes
-    pipes.forEach((p) => (p.x -= speed));
+    pipes.forEach(p => p.x -= speed);
 
     if (pipes[pipes.length - 1].x < 200) {
       pipes.push(createPipe());
@@ -116,34 +126,39 @@ function update() {
     if (pipes[0].x < -70) {
       pipes.shift();
       cookies++;
-      if (cookies % 5 === 0 && pipeGap > 130) pipeGap -= 5;
+
+      if (cookies % 5 === 0 && pipeGap > 130) {
+        pipeGap -= 5;
+      }
     }
 
-    // collision
-    pipes.forEach((p) => {
+    // COLLISION
+    pipes.forEach(p => {
       if (hit(p)) state = "gameover";
     });
 
     if (y < 0 || y > 600) state = "gameover";
 
-    // draw pipes
+    // DRAW PIPES
     ctx.fillStyle = "green";
-    pipes.forEach((p) => {
+    pipes.forEach(p => {
       ctx.fillRect(p.x, 0, pipeWidth, p.height);
       ctx.fillRect(p.x, p.height + pipeGap, pipeWidth, 600);
     });
 
-    // teddy
+    // TEDDY
     ctx.drawImage(teddy, x, y, 40, 40);
 
-    // cookies
+    // COOKIE HUD
     ctx.drawImage(cookie, 10, 10, 25, 25);
     ctx.fillStyle = "white";
     ctx.font = "20px Arial";
     ctx.fillText(cookies, 40, 30);
   }
 
+  // GAME OVER
   if (state === "gameover") {
+
     if (cookies > best) best = cookies;
 
     ctx.drawImage(skull, 170, 150, 60, 60);
@@ -155,7 +170,7 @@ function update() {
     ctx.font = "20px Arial";
     ctx.fillText("Cookies: " + cookies, 140, 300);
     ctx.fillText("Best: " + best, 150, 340);
-    ctx.fillText("SPACE to restart", 110, 400);
+    ctx.fillText("Tap / SPACE to restart", 100, 400);
   }
 
   requestAnimationFrame(update);
