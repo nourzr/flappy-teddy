@@ -37,7 +37,7 @@ let clouds = [
   {x: 350, y: 80}
 ];
 
-// CREATE PIPE
+// PIPE CREATION
 function createPipe() {
   return {
     x: 400,
@@ -57,26 +57,32 @@ function reset() {
   state = "playing";
 }
 
-// INPUT (SPACE)
-document.addEventListener("keydown", e => {
-  if (e.code === "Space") {
-    if (state === "home") reset();
-    else if (state === "playing") velocity = -10;
-    else if (state === "gameover") reset();
-  }
-});
-
-// 📱 TOUCH + CLICK SUPPORT
+// 🔥 UNIFIED INPUT FUNCTION
 function jumpOrStart() {
   if (state === "home") reset();
   else if (state === "playing") velocity = -10;
   else if (state === "gameover") reset();
 }
 
-document.addEventListener("touchstart", jumpOrStart);
-document.addEventListener("mousedown", jumpOrStart);
+// ⌨️ KEYBOARD
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") {
+    jumpOrStart();
+  }
+});
 
-// COLLISION
+// 📱 MOBILE TOUCH (FIXED)
+canvas.addEventListener("touchstart", function (e) {
+  e.preventDefault();
+  jumpOrStart();
+}, { passive: false });
+
+// 🖱️ MOUSE CLICK
+canvas.addEventListener("mousedown", function () {
+  jumpOrStart();
+});
+
+// COLLISION CHECK
 function hit(pipe) {
   return (
     x < pipe.x + pipeWidth &&
@@ -105,7 +111,7 @@ function update() {
   if (state === "home") {
     ctx.fillStyle = "white";
     ctx.font = "40px Arial";
-    ctx.fillText("Flappy Teddy", 70, 250);
+    ctx.fillText("Flappy Teddy 🧸", 60, 250);
 
     ctx.font = "18px Arial";
     ctx.fillText("Tap / Click / SPACE to start", 70, 320);
