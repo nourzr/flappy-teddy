@@ -1,194 +1,193 @@
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+import pygame
+import sys
+import random
 
-// FULLSCREEN FIX (important)
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resize);
-resize();
+pygame.init()
 
-// IMAGES
-const teddy = new Image();
-teddy.src = "teddy.png";
+# SCREEN
+WIDTH = 400
+HEIGHT = 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Flappy Teddy")
 
-const cookie = new Image();
-cookie.src = "cookie.png";
+clock = pygame.time.Clock()
 
-const skull = new Image();
-skull.src = "skull.png";
+# COLORS
+SKY = (135, 206, 235)
+GREEN = (0, 200, 0)
+WHITE = (255, 255, 255)
 
-// GAME STATE
-let state = "home";
+# FONTS
+font_big = pygame.font.SysFont(None, 60)
+font = pygame.font.SysFont(None, 36)
+font_small = pygame.font.SysFont(None, 28)
 
-// TEDDY
-let x = 100;
-let y = 300;
-let velocity = 0;
-let gravity = 0.5;
+# STATES
+HOME = 0
+PLAYING = 1
+GAME_OVER = 2
+state = HOME
 
-// PIPES
-let pipes = [];
-let pipeWidth = 70;
-let pipeGap = 220;
-let speed = 3;
+# LOAD IMAGES 🧸🍪💀
+teddy_img = pygame.image.load("teddy.png")
+cookie_img = pygame.image.load("cookie.png")
+skull_img = pygame.image.load("skull.png")
 
-// SCORE
-let cookies = 0;
-let best = 0;
-let newRecord = false;
+# RESIZE IMAGES
+teddy_img = pygame.transform.scale(teddy_img, (45, 45))
+cookie_img = pygame.transform.scale(cookie_img, (30, 30))
+skull_img = pygame.transform.scale(skull_img, (50, 50))
 
-// FUNNY MESSAGES 😄
-let funnyLose = [
-  "Teddy got bullied by pipes 💀",
-  "He forgot how to fly 😭",
-  "Cookies distracted him 🍪",
-  "Skill issue detected 🧠",
-];
+# TEDDY
+teddy_x = 100
+teddy_y = 300
+gravity = 0.5
+velocity = 0
 
-let funnyWin = [
-  "Teddy is proud of you 🧸",
-  "Cookie addiction level: MAX 🍪",
-  "You are the chosen one 😎",
-];
+# CLOUDS ☁️
+clouds = [
+    {"x": 50, "y": 100},
+    {"x": 200, "y": 150},
+    {"x": 350, "y": 80}
+]
 
-function createPipe() {
-  return {
-    x: canvas.width,
-    height: Math.random() * (canvas.height - 200) + 80
-  };
-}
+# PIPES
+pipe_width = 70
+pipe_speed = 4
+pipe_gap = 220
+pipes = []
 
-pipes.push(createPipe());
+# SCORE 🍪
+cookies = 0
+best_cookies = 0
 
-// RESET
-function reset() {
-  y = 300;
-  velocity = 0;
-  pipes = [createPipe()];
-  cookies = 0;
-  pipeGap = 220;
-  newRecord = false;
-  state = "playing";
-}
 
-// INPUT
-function jumpOrStart() {
-  if (state === "home") reset();
-  else if (state === "playing") velocity = -10;
-  else if (state === "gameover") reset();
-}
+def create_pipe():
+    height = random.randint(120, 380)
+    return {"x": WIDTH, "height": height}
 
-canvas.addEventListener("pointerdown", (e) => {
-  e.preventDefault();
-  jumpOrStart();
-});
 
-document.addEventListener("keydown", e => {
-  if (e.code === "Space") jumpOrStart();
-});
+pipes.append(create_pipe())
 
-// COLLISION
-function hit(p) {
-  return (
-    x < p.x + pipeWidth &&
-    x + 40 > p.x &&
-    (y < p.height || y + 40 > p.height + pipeGap)
-  );
-}
 
-// GAME LOOP
-function update() {
+def reset_game():
+    global teddy_y, velocity, pipes, cookies, state, pipe_gap
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    teddy_y = 300
+    velocity = 0
+    pipes = [create_pipe()]
+    cookies = 0
+    pipe_gap = 220
+    state = PLAYING
 
-  // HOME
-  if (state === "home") {
-    ctx.fillStyle = "white";
-    ctx.font = "bold 50px Arial";
-    ctx.fillText("Flappy Teddy 🧸", 80, 200);
 
-    ctx.font = "20px Arial";
-    ctx.fillText("Tap / Click / SPACE to start", 90, 280);
-  }
+while True:
 
-  // PLAYING
-  if (state === "playing") {
+    screen.fill(SKY)
 
-    velocity += gravity;
-    y += velocity;
+    for event in pygame.event.get():
 
-    pipes.forEach(p => p.x -= speed);
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
 
-    if (pipes[pipes.length - 1].x < canvas.width - 200) {
-      pipes.push(createPipe());
-    }
+        if event.type == pygame.KEYDOWN:
 
-    if (pipes[0].x < -pipeWidth) {
-      pipes.shift();
-      cookies++;
+            # HOME START
+            if state == HOME and event.key == pygame.K_SPACE:
+                reset_game()
 
-      if (cookies % 5 === 0 && pipeGap > 130) {
-        pipeGap -= 5;
-      }
-    }
+            # JUMP
+            elif state == PLAYING and event.key == pygame.K_SPACE:
+                velocity = -10
 
-    // COLLISION
-    pipes.forEach(p => {
-      if (hit(p)) state = "gameover";
-    });
+            # RESTART
+            elif state == GAME_OVER and event.key == pygame.K_SPACE:
+                reset_game()
 
-    if (y < 0 || y > canvas.height) state = "gameover";
+    # 🌥️ CLOUDS
+    for c in clouds:
+        pygame.draw.circle(screen, WHITE, (c["x"], c["y"]), 20)
+        c["x"] -= 1
+        if c["x"] < -50:
+            c["x"] = WIDTH + 50
 
-    // DRAW PIPES (lighter for performance)
-    ctx.fillStyle = "#1f8f3a";
-    pipes.forEach(p => {
-      ctx.fillRect(p.x, 0, pipeWidth, p.height);
-      ctx.fillRect(p.x, p.height + pipeGap, pipeWidth, canvas.height);
-    });
+    # 🏠 HOME SCREEN
+    if state == HOME:
 
-    // TEDDY
-    ctx.drawImage(teddy, x, y, 45, 45);
+        title = font_big.render("Flappy Teddy", True, WHITE)
+        subtitle = font.render("Press SPACE to Start", True, WHITE)
 
-    // HUD
-    ctx.drawImage(cookie, 10, 10, 25, 25);
-    ctx.fillStyle = "white";
-    ctx.font = "20px Arial";
-    ctx.fillText(cookies, 40, 30);
-  }
+        screen.blit(title, (70, 200))
+        screen.blit(subtitle, (70, 280))
 
-  // GAME OVER
-  if (state === "gameover") {
+    # 🎮 GAMEPLAY
+    elif state == PLAYING:
 
-    if (cookies > best) {
-      best = cookies;
-      newRecord = true;
-    }
+        velocity += gravity
+        teddy_y += velocity
 
-    ctx.drawImage(skull, canvas.width / 2 - 30, 120, 60, 60);
+        # move pipes
+        for p in pipes:
+            p["x"] -= pipe_speed
 
-    ctx.fillStyle = "white";
-    ctx.font = "bold 40px Arial";
-    ctx.fillText("You Lost!", canvas.width / 2 - 90, 220);
+        if pipes[-1]["x"] < 180:
+            pipes.append(create_pipe())
 
-    // funny message
-    let msg = funnyLose[Math.floor(Math.random() * funnyLose.length)];
-    ctx.font = "18px Arial";
-    ctx.fillText(msg, canvas.width / 2 - 120, 260);
+        if pipes[0]["x"] < -pipe_width:
+            pipes.pop(0)
+            cookies += 1
 
-    if (newRecord) {
-      ctx.fillText("🔥 NEW HIGH SCORE! 🔥", canvas.width / 2 - 120, 290);
-    }
+            # 🔥 difficulty increases
+            if cookies % 5 == 0 and pipe_gap > 130:
+                pipe_gap -= 5
 
-    ctx.font = "20px Arial";
-    ctx.fillText("Cookies: " + cookies, canvas.width / 2 - 70, 340);
-    ctx.fillText("Best: " + best, canvas.width / 2 - 50, 370);
+        # COLLISION
+        teddy_rect = pygame.Rect(teddy_x, teddy_y, 40, 40)
 
-    ctx.fillText("Tap / SPACE to restart", canvas.width / 2 - 110, 420);
-  }
+        for p in pipes:
 
-  requestAnimationFrame(update);
-}
+            top = pygame.Rect(p["x"], 0, pipe_width, p["height"])
+            bottom = pygame.Rect(p["x"], p["height"] + pipe_gap, pipe_width, HEIGHT)
 
-update();
+            if teddy_rect.colliderect(top) or teddy_rect.colliderect(bottom):
+                state = GAME_OVER
+
+        if teddy_y < 0 or teddy_y > HEIGHT:
+            state = GAME_OVER
+
+        # DRAW PIPES
+        for p in pipes:
+            pygame.draw.rect(screen, GREEN, (p["x"], 0, pipe_width, p["height"]))
+            pygame.draw.rect(screen, GREEN, (p["x"], p["height"] + pipe_gap, pipe_width, HEIGHT))
+
+        # 🧸 TEDDY IMAGE
+        screen.blit(teddy_img, (teddy_x, teddy_y))
+
+        # 🍪 HUD (TOP LEFT)
+        screen.blit(cookie_img, (10, 10))
+        hud = font_small.render(str(cookies), True, WHITE)
+        screen.blit(hud, (50, 12))
+
+    # 💀 GAME OVER
+    elif state == GAME_OVER:
+
+        if cookies > best_cookies:
+            best_cookies = cookies
+
+        screen.blit(skull_img, (175, 120))
+
+        title = font_big.render("You Lost!", True, WHITE)
+        msg = font_small.render("Teddy crashed into pipes 😭", True, WHITE)
+        score = font.render(f"Cookies: {cookies}", True, WHITE)
+        best = font.render(f"Best: {best_cookies}", True, WHITE)
+        restart = font.render("Press SPACE to Restart", True, WHITE)
+
+        screen.blit(title, (120, 200))
+        screen.blit(msg, (70, 260))
+        screen.blit(score, (110, 320))
+        screen.blit(best, (130, 370))
+        screen.blit(restart, (40, 430))
+
+    pygame.display.update()
+    clock.tick(60)
